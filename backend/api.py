@@ -87,4 +87,25 @@ alerts = df[
 
 @app.get("/alerts")
 def get_alerts():
-    return alerts.apply(format_alert, axis=1).tolist()
+    results = []
+
+    for unit in df['unit_id'].unique():
+        unit_df = df[df['unit_id'] == unit].sort_values("timestamp")
+
+        latest = unit_df.iloc[-1]
+
+        # 🔥 get last 20 points for graph
+        history = unit_df.tail(20)[['timestamp', 'temp']].copy()
+        history['timestamp'] = history['timestamp'].astype(str)
+
+        results.append({
+            "unit_id": latest['unit_id'],
+            "timestamp": latest['timestamp'].isoformat(),
+            "alert_level": latest['alert_level'],
+            "confidence": round(latest['anomaly_score_smooth'], 2),
+            "reason": "Auto-detected anomaly",
+            "action": "Inspect system",
+            "history": history.to_dict(orient='records')   # ✅ NEW
+        })
+
+    return results

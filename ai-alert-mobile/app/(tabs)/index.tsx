@@ -1,7 +1,14 @@
 import { useEffect, useState, useRef } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Pressable,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Audio } from "expo-av";
 
-// ✅ Proper typing
 type Alert = {
   unit_id: string;
   timestamp: string;
@@ -13,9 +20,19 @@ type Alert = {
 
 export default function HomeScreen() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-
-  // 🔥 Track previous alerts
   const prevAlertsRef = useRef<Record<string, Alert>>({});
+  const router = useRouter();
+
+  const playAlertSound = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        require("../../assets/alert.mp3")
+      );
+      await sound.playAsync();
+    } catch (e) {
+      console.log("Sound error", e);
+    }
+  };
 
   useEffect(() => {
     const fetchAlerts = () => {
@@ -24,6 +41,7 @@ export default function HomeScreen() {
         .then((data: Alert[]) => {
           const latestMap: Record<string, Alert> = {};
 
+          // keep only latest alert per unit
           data.forEach((item) => {
             if (
               !latestMap[item.unit_id] ||
@@ -34,7 +52,7 @@ export default function HomeScreen() {
             }
           });
 
-          const filtered = Object.values(latestMap);
+          let filtered = Object.values(latestMap);
 
           const priority: Record<string, number> = {
             CRITICAL: 3,
@@ -43,44 +61,39 @@ export default function HomeScreen() {
             LOW: 0,
           };
 
+          // sort by severity
           filtered.sort(
             (a, b) => priority[b.alert_level] - priority[a.alert_level]
           );
 
-          // 🔥 CHANGE DETECTION
+          // detect new alerts
           const prev = prevAlertsRef.current;
 
           filtered.forEach((item) => {
             const old = prev[item.unit_id];
 
             if (!old || old.alert_level !== item.alert_level) {
-              // 🚨 popup for CRITICAL
               if (item.alert_level === "CRITICAL") {
+                playAlertSound();
                 alert(`🚨 CRITICAL ALERT: ${item.unit_id}`);
               }
             }
           });
 
-          // 🔄 update reference
-          const map: Record<string, Alert> = {};
-          filtered.forEach((a) => (map[a.unit_id] = a));
-          prevAlertsRef.current = map;
+          const newMap: Record<string, Alert> = {};
+          filtered.forEach((a) => (newMap[a.unit_id] = a));
+          prevAlertsRef.current = newMap;
 
           setAlerts(filtered);
         })
-        .catch((err) => console.log(err));
+        .catch(console.log);
     };
 
-    // 🔥 initial fetch
     fetchAlerts();
-
-    // 🔁 auto refresh every 5 sec
     const interval = setInterval(fetchAlerts, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
-  // 🎨 Color mapping
   const getColor = (level: string) => {
     switch (level) {
       case "CRITICAL":
@@ -94,69 +107,70 @@ export default function HomeScreen() {
     }
   };
 
-  // 📦 Card UI with highlight
   const renderItem = ({ item }: { item: Alert }) => {
-    const prev = prevAlertsRef.current[item.unit_id];
-
-    const isNew =
-      !prev || prev.alert_level !== item.alert_level;
-
     return (
-      <View
-        style={[
-          styles.card,
-          { borderLeftColor: getColor(item.alert_level) },
-          isNew && { backgroundColor: "#2a2a2a" }, // 🔥 highlight
-        ]}
+      <Pressable
+        onPress={() =>
+          router.push({
+           pathname: "/alert/graph",
+           params: { data: JSON.stringify(item) },
+           })
+        }
       >
-        <Text style={styles.title}>{item.unit_id}</Text>
-
-        <Text
-          style={{
-            color: getColor(item.alert_level),
-            fontWeight: "bold",
-          }}
+        <View
+          style={[
+            styles.card,
+            { borderLeftColor: getColor(item.alert_level) },
+          ]}
         >
-          {item.alert_level}
-        </Text>
+          <Text style={styles.title}>{item.unit_id}</Text>
 
-        <Text style={styles.text}>
-          Confidence: {(item.confidence * 100).toFixed(1)}%
-        </Text>
+          <View
+            style={{
+              backgroundColor: getColor(item.alert_level),
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 5,
+              marginBottom: 5,
+            }}
+          >
+            <Text style={{ color: "#000", fontWeight: "bold" }}>
+              {item.alert_level}
+            </Text>
+          </View>
 
-        <Text style={styles.text}>
-          Time: {new Date(item.timestamp).toLocaleString()}
-        </Text>
+          <Text style={styles.text}>
+            Confidence: {(item.confidence * 100).toFixed(1)}%
+          </Text>
 
-        <Text style={styles.text}>Reason: {item.reason}</Text>
-        <Text style={styles.text}>Action: {item.action}</Text>
-      </View>
+          <Text style={styles.text}>
+            Time: {new Date(item.timestamp).toLocaleString()}
+          </Text>
+
+          <Text style={styles.text}>Reason: {item.reason}</Text>
+          <Text style={styles.text}>Action: {item.action}</Text>
+        </View>
+      </Pressable>
     );
   };
 
   return (
     <View style={styles.container}>
-      {alerts.length === 0 ? (
-        <Text style={styles.empty}>No alerts 🚀</Text>
-      ) : (
-        <FlatList
-          data={alerts}
-          keyExtractor={(item) => item.unit_id}
-          renderItem={renderItem}
-        />
-      )}
+      <FlatList
+        data={alerts}
+        keyExtractor={(item, index) => item.unit_id + index} // ✅ FIXED
+        renderItem={renderItem}
+      />
     </View>
   );
 }
 
-// 🎨 Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
     backgroundColor: "#000",
   },
-
   card: {
     backgroundColor: "#1e1e1e",
     padding: 15,
@@ -164,22 +178,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderLeftWidth: 6,
   },
-
   title: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 5,
   },
-
   text: {
     color: "#ccc",
     marginTop: 4,
-  },
-
-  empty: {
-    color: "white",
-    textAlign: "center",
-    marginTop: 50,
   },
 });
