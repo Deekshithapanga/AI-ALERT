@@ -1,0 +1,15 @@
+# Python
+deekenv/
+__pycache__/
+*.pyc
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+
+# Mac
+.DS_Store
+
+# Env files
+.env
