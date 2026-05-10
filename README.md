@@ -582,3 +582,193 @@ The project demonstrates both:
 * human-centered system thinking
 
 which are critical for real-world industrial AI solutions.
+
+
+# Setup Instructions
+
+## Prerequisites
+
+Make sure the following are installed:
+
+- Node.js
+- Python 3.10+
+- Expo Go mobile app
+- Git
+
+---
+
+# Clone Repository
+
+```bash
+git clone https://github.com/Deekshithapanga/AI-ALERT.git
+
+cd AI-ALERT
+```
+
+---
+
+# Backend Setup
+
+Open terminal inside the backend folder:
+
+```bash
+cd backend
+```
+
+## Create Virtual Environment
+
+### Mac/Linux
+
+```bash
+python3 -m venv deekenv
+
+source deekenv/bin/activate
+```
+
+### Windows
+
+```bash
+python -m venv deekenv
+
+deekenv\Scripts\activate
+```
+
+---
+
+## Install Dependencies
+
+```bash
+pip install fastapi uvicorn pandas numpy scikit-learn
+```
+
+---
+
+## Run Backend Server
+
+```bash
+uvicorn api:app --reload
+```
+
+Backend will run on:
+
+```bash
+http://127.0.0.1:8000
+```
+
+---
+
+# Mobile App Setup
+
+Open a new terminal:
+
+```bash
+cd ai-alert-mobile
+```
+
+---
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+## Install Expo Packages
+
+```bash
+npx expo install expo-router expo-av expo-notifications react-native-chart-kit react-native-svg
+```
+
+---
+
+## Start Expo App
+
+```bash
+npx expo start
+```
+
+---
+
+# Run on Mobile Device
+
+1. Install Expo Go from Play Store/App Store
+2. Scan the QR code shown in terminal/browser
+3. Ensure:
+   - mobile device
+   - backend server
+   - development machine
+
+are connected to the same WiFi network.
+
+---
+
+# Configure Backend API URL
+
+Inside:
+
+```bash
+ai-alert-mobile/app/(tabs)/index.tsx
+```
+
+update:
+
+```ts
+fetch("http://YOUR_LOCAL_IP:8000/alerts")
+```
+
+Example:
+
+```ts
+fetch("http://192.168.0.108:8000/alerts")
+```
+
+Use your machine's local IP address.
+
+---
+
+# Features
+
+- AI-powered HVAC anomaly detection
+- Real-time technician alert dashboard
+- Risk prioritization
+- Push notifications
+- Sensor trend graphs
+- AI-generated diagnosis
+- Recommended technician actions
+
+---
+
+# Project Structure
+
+```bash
+AI-ALERT/
+│
+├── backend/
+│   ├── api.py
+│   ├── backend.py
+│   └── hvac_sensor_data.csv
+│
+├── ai-alert-mobile/
+│   ├── app/
+│   ├── assets/
+│   └── package.json
+│
+├── screenshots/
+│
+├── README.md
+│
+└── .gitignore
+```
+
+---
+
+# Notes
+
+- The system currently uses polling every 5 seconds for fetching alerts.
+- Isolation Forest is used for unsupervised anomaly detection.
+- The dataset is replayed as simulated real-time data.
+- The app is optimized for technician-focused mobile workflows.
+
+---
