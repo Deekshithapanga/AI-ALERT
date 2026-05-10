@@ -772,3 +772,7 @@ AI-ALERT/
 - The app is optimized for technician-focused mobile workflows.
 
 ---
+
+# Walkthrough Video
+
+Loom Video: https://www.loom.com/share/5c153a711ac040898803249f43983ed8
