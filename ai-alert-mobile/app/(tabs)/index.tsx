@@ -10,6 +10,22 @@ import {
 import { useRouter } from "expo-router";
 import { Audio } from "expo-av";
 
+import * as Notifications from "expo-notifications";
+
+// ============================================================
+// NOTIFICATION CONFIG
+// ============================================================
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 type Alert = {
   unit_id: string;
   timestamp: string;
@@ -57,14 +73,37 @@ export default function HomeScreen() {
   };
 
   // ============================================================
+  // SEND NOTIFICATION
+  // ============================================================
+
+  const sendNotification = async (
+    title: string,
+    body: string
+  ) => {
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+      },
+      trigger: null,
+    });
+  };
+
+  // ============================================================
   // FETCH ALERTS
   // ============================================================
 
   useEffect(() => {
 
+    // ASK NOTIFICATION PERMISSION
+
+    Notifications.requestPermissionsAsync();
+
     const fetchAlerts = () => {
 
-      fetch("http://192.168.0.108:8000/alerts")
+      fetch("http://192.168.31.207:8000/alerts")
 
         .then((res) => res.json())
 
@@ -138,9 +177,16 @@ export default function HomeScreen() {
 
               if (item.alert_level === "CRITICAL") {
 
+                // PLAY SOUND
+
                 playAlertSound();
 
-                alert(`🚨 CRITICAL ALERT: ${item.unit_id}`);
+                // PUSH NOTIFICATION
+
+                sendNotification(
+                  "🚨 CRITICAL HVAC ALERT",
+                  `${item.unit_id} requires immediate inspection`
+                );
               }
             }
           });
@@ -418,7 +464,9 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 80,
     backgroundColor: "#000",
   },
 
@@ -426,7 +474,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 24,
     fontWeight: "bold",
-    marginTop: 10,
   },
 
   subHeader: {

@@ -307,9 +307,14 @@ def get_alerts():
         # GRAPH HISTORY
         # ====================================================
 
-        history = unit_df.tail(20)[
-            ['timestamp', 'temp']
-        ].copy()
+        history = unit_df.tail(20)[[
+    'timestamp',
+    'temp',
+    'pressure',
+    'airflow',
+    'vibration',
+    'power'
+]].copy()
 
         history['timestamp'] = history[
             'timestamp'
